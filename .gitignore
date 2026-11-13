@@ -59,3 +59,10 @@ desktop.ini
 # Blender backups
 *.blend1
 *.blend2
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Blender export staging / previews
+ArtSource/**/_build/

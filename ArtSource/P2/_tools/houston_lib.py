@@ -153,7 +153,7 @@ class Atlas:
         dd = np.sqrt((xx + 0.5 - cx) ** 2 + (yy + 0.5 - cy) ** 2)
         m = dd <= r
         if ring is not None:
-            m = m & (dd >= r - ring)
+            m = m & (dd >= r - ring * w)
         self.A[y0:y1, x0:x1, :3][m] = np.array(color, float)
         return self
 

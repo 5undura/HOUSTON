@@ -2,14 +2,14 @@
 import bpy, os, sys, math, importlib
 import numpy as np
 
-TOOLS = "/Users/hajiun/Downloads/poly_assets/HOUSTON_P2/_tools"
-OUT = "/Users/hajiun/Downloads/poly_assets/HOUSTON_P2"
+TOOLS = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.join(os.path.dirname(TOOLS), "_build")
 sys.path.insert(0, TOOLS)
 import houston_lib as H
 importlib.reload(H)
 
 MOD = os.path.join(OUT, "Models", "P2"); TEX = os.path.join(OUT, "Textures", "P2")
-TEXC = os.path.join(OUT, "Textures", "COM"); PRE = os.path.join(OUT, "_preview_props")
+TEXC = os.path.join(OUT, "Textures", "Common"); PRE = os.path.join(OUT, "_preview_props")
 for d in (MOD, TEX, TEXC, PRE):
     os.makedirs(d, exist_ok=True)
 
