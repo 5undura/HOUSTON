@@ -246,6 +246,7 @@ def respirator():
 def med_shelf():
     N = "P2_MedShelf_01"
     A = H.Atlas(128).grid(["frame", "shelf", "back", "sign"], 4)
+    A.swmap.update(back="metal", sign="plastic")
     A.fill("frame", (118, 122, 118), amp=8, grime=0.3, seed=41).bevel("frame")
     A.fill("shelf", (132, 134, 130), amp=8, grime=0.2, seed=42).bevel("shelf")
     A.rect("shelf", 0.1, 0.2, 0.35, 0.8, LABEL).rect("shelf", 0.6, 0.2, 0.85, 0.8, LABEL)
@@ -267,6 +268,7 @@ def med_shelf():
     finish(N, [body], [m])
 
     B = H.Atlas(64).grid(["amber", "cap", "vial", "box"], 2)
+    B.default_sw = "plastic"
     B.fill("amber", (150, 92, 36), amp=6, grad=18, speck=0, grime=0.1, seed=45)
     B.rect("amber", 0, 0.3, 1, 0.7, LABEL).hlines("amber", 0.4, 0.65, 3, -70, 0.1, 0.7)
     B.fill("cap", (200, 200, 196), amp=4, grime=0, seed=46).hlines("cap", 0, 1, 3, -16)
@@ -369,6 +371,7 @@ def decals():
     A.cell("hazard", 0, 0, 128, 16).cell("danger", 0, 16, 64, 56).cell("o2", 64, 16, 96, 48)
     A.cell("barcode", 96, 16, 128, 32).cell("auth", 0, 56, 64, 72).cell("label", 64, 56, 112, 72)
     A.cell("exit", 0, 72, 64, 88)
+    A.default_sw = "plastic"
     A.hazard("hazard", 0, 0, 1, 1, w=6).shade("hazard", 0, 0, 1, 1, -10)
     A.fill("danger", (200, 168, 44), amp=6, grad=6, speck=0.03, grime=0.2, seed=81).frame("danger", 0.03, 0.05, 0.97, 0.95, BLACK)
     A.rect("danger", 0.08, 0.15, 0.3, 0.85, BLACK).text("danger", 0.16, 0.3, "!", (200, 168, 44), scale=2)

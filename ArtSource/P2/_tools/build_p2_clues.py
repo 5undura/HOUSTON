@@ -83,13 +83,17 @@ def stamp(A, name, fx, fy, text, color=REDINK):
 
 
 def portrait_atlas():
-    return (H.Atlas(128).cell("sheet", 0, 0, 90, 128).cell("edge", 96, 0, 128, 32)
-            .cell("back", 96, 32, 128, 64).cell("misc", 96, 64, 128, 96).cell("misc2", 96, 96, 128, 128))
+    A = (H.Atlas(128).cell("sheet", 0, 0, 90, 128).cell("edge", 96, 0, 128, 32)
+         .cell("back", 96, 32, 128, 64).cell("misc", 96, 64, 128, 96).cell("misc2", 96, 96, 128, 128))
+    A.default_sw = "paper"
+    return A
 
 
 def landscape_atlas():
-    return (H.Atlas(128).cell("sheet", 0, 0, 128, 90).cell("edge", 0, 96, 32, 128)
-            .cell("back", 32, 96, 64, 128).cell("misc", 64, 96, 128, 128))
+    A = (H.Atlas(128).cell("sheet", 0, 0, 128, 90).cell("edge", 0, 96, 32, 128)
+         .cell("back", 32, 96, 64, 128).cell("misc", 64, 96, 128, 128))
+    A.default_sw = "paper"
+    return A
 
 
 def base_cells(A):
@@ -137,7 +141,7 @@ def crew_manifest():
 
 def medical_record():
     N = "P2_MedicalRecord_01"
-    A = portrait_atlas(); base_cells(A); paper(A, "sheet", seed=31)
+    A = portrait_atlas(); A.swmap.update(misc="wood", misc2="metal"); base_cells(A); paper(A, "sheet", seed=31)
     A.text("sheet", 0.07, 0.07, "PATIENT REC", PEN)
     A.text("sheet", 0.07, 0.14, "ID EX-07-03", GREY)
     A.frame("sheet", 0.06, 0.22, 0.94, 0.48, (90, 88, 84))
@@ -183,7 +187,7 @@ def warning_poster():
 
 def manual():
     N = "P2_Manual_01"
-    A = portrait_atlas()
+    A = portrait_atlas(); A.swmap.update(sheet="fabric", back="fabric", misc="fabric", misc2="fabric")
     A.fill("edge", (210, 204, 186), amp=3, grad=0, speck=0, grime=0, seed=61).hlines("edge", 0, 1, 2, -18)
     A.fill("back", (44, 54, 84), amp=5, grime=0.25, seed=62)
     A.fill("sheet", (44, 54, 84), amp=5, grad=10, speck=0.05, grime=0.3, seed=63).bevel("sheet", 14, 16)
@@ -264,6 +268,7 @@ def blueprint():
 def small_papers():
     A = H.Atlas(128).grid(["sticky_y", "sticky_p", "sticky_b", "memo", "photo1", "photo2", "badge", "clip",
                            "edge_w", "back_w"], 4)
+    A.default_sw = "paper"; A.swmap.update(badge="plastic", clip="metal")
     for nm, c, sd, txt in (("sticky_y", (214, 196, 92), 91, "4-7-2"), ("sticky_p", (212, 146, 152), 92, "EX07?"), ("sticky_b", (132, 172, 204), 93, "!!")):
         A.fill(nm, c, amp=4, grad=10, speck=0.02, grime=0.1, seed=sd).shade(nm, 0, 0, 1, 0.15, -14)
         A.text(nm, 0.15, 0.25, txt, INK)

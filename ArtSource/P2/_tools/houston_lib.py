@@ -21,6 +21,22 @@ FONT = {
  '/': "001001010100100", ':': "000010000010000",
 }
 
+# ---- material swatches (CC0, cut from "PSX Style Opulent Office" textures)
+try:
+    _z = np.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'swatches.npz'))
+    SW = {k: _z[k] for k in _z.files}
+except Exception:
+    SW = {}
+SW_CONTRAST = {'metal': 3.2, 'plastic': 2.4, 'fabric': 1.8, 'rough': 0.6, 'dirty': 0.7, 'chair': 0.9,
+               'paper': 1.1, 'wood': 0.9, 'cab': 1.5}
+SW_RULES = [
+    (('scr', 'led', 'lamp', 'glass', 'gauge', 'button', 'knob', 'hazard'), None),
+    (('cloth', 'pillow', 'cloth_a', 'cloth_b'), 'fabric'),
+    (('dark', 'base', 'wheel', 'hose', 'k', 'g', 'r', 'y'), 'dirty'),
+    (('metal', 'trim', 'frame', 'rail', 'clip', 'hook', 'shelf', 'tank', 'side', 'top', 'brass'), 'metal'),
+    (('body', 'front', 'unit', 'plastic', 'bezel', 'panel', 'console', 'mask', 'bag', 'vial', 'amber', 'cap', 'box'), 'plastic'),
+]
+
 
 def _hash(xx, yy, seed=0):
     h = (xx.astype(np.uint64) * np.uint64(73856093)) ^ (yy.astype(np.uint64) * np.uint64(19349663)) ^ np.uint64(seed * 83492791 + 1)
@@ -35,6 +51,8 @@ class Atlas:
         self.A = np.zeros((size, size, 4), float)
         self.A[..., 3] = 255
         self.cells = {}
+        self.swmap = {}
+        self.default_sw = 'cab'
 
     # ---- layout
     def cell(self, name, x0, y0, x1, y1):
@@ -57,16 +75,47 @@ class Atlas:
                 y0 + max(int(round(fy0 * h)) + 1, int(round(fy1 * h))))
 
     # ---- painting (fractions are inside the cell, y=0 top)
-    def fill(self, name, color, amp=10, grad=12, speck=0.05, grime=0.3, seed=0, region=(0, 0, 1, 1)):
+    def _sw_key(self, name):
+        if name in self.swmap:
+            return self.swmap[name]
+        n = name.lower()
+        for keys, k in SW_RULES:
+            if n in keys or any(n.startswith(p) for p in keys if p.endswith('_')):
+                return k
+        return self.default_sw
+
+    def fill(self, name, color, amp=10, grad=12, speck=0.05, grime=0.3, seed=0, region=(0, 0, 1, 1), sw='auto'):
         x0, y0, x1, y1 = self._px(name, *region)
         yy, xx = np.mgrid[y0:y1, x0:x1]
-        t = (yy - y0) / max(1, (y1 - y0) - 1)
-        d = BAYER[yy % 4, xx % 4] * amp + (0.5 - t) * grad
+        h, w = y1 - y0, x1 - x0
+        t = (yy - y0) / max(1, h - 1)
         r = _hash(xx, yy, seed)
         r2 = _hash(xx + 7, yy + 3, seed + 1)
-        d = d + np.where(r < speck * 0.5, 16, 0) - np.where((r >= speck * 0.5) & (r < speck), 18, 0)
-        d = d - grime * np.clip((t - 0.55) / 0.45, 0, 1) * 40 * (0.6 + 0.4 * r2)
-        self.A[y0:y1, x0:x1, :3] = np.clip(np.array(color, float) + d[..., None], 0, 255)
+        key = self._sw_key(name) if sw == 'auto' else sw
+        if key is None or key not in SW:
+            d = BAYER[yy % 4, xx % 4] * amp + (0.5 - t) * grad
+            d = d + np.where(r < speck * 0.5, 16, 0) - np.where((r >= speck * 0.5) & (r < speck), 18, 0)
+            d = d - grime * np.clip((t - 0.55) / 0.45, 0, 1) * 40 * (0.6 + 0.4 * r2)
+            self.A[y0:y1, x0:x1, :3] = np.clip(np.array(color, float) + d[..., None], 0, 255)
+            return self
+        src = SW[key]; con = SW_CONTRAST.get(key, 1.0)
+        sh_, sw_ = src.shape
+        oy, ox = (seed * 17) % sh_, (seed * 29) % sw_
+        reps = (int(np.ceil((h + oy) / sh_)) + 1, int(np.ceil((w + ox) / sw_)) + 1)
+        det = np.tile(src, reps)[oy:oy + h, ox:ox + w]
+        det = 1 + (det - 1) * con
+        light = 1 + (0.5 - t) * (grad / 36.0)
+        de = np.minimum(np.minimum(xx - x0, x1 - 1 - xx), np.minimum(yy - y0, y1 - 1 - yy))
+        ao = 1 - 0.3 * np.clip(1 - de / 4.0, 0, 1)
+        gr = 1 - grime * np.clip((t - 0.45) / 0.55, 0, 1) * 0.6 * (0.6 + 0.4 * r2)
+        col = _hash(xx, np.zeros_like(yy), seed + 5)
+        start = _hash(xx, np.ones_like(yy), seed + 9)
+        streak = np.where((col < 0.18 * grime / 0.3) & (t > start * 0.6), 1 - 0.12 * np.clip((t - start * 0.6) * 2, 0, 1), 1.0)
+        f = det * light * ao * gr * streak
+        f = np.where(yy == y0, f * 1.12, f)
+        rgb = np.array(color, float) * f[..., None] + (BAYER[yy % 4, xx % 4] * amp * 0.25)[..., None]
+        rgb = rgb + (np.where(r < speck * 0.3, 12, 0) - np.where((r >= speck * 0.3) & (r < speck * 0.6), 14, 0))[..., None]
+        self.A[y0:y1, x0:x1, :3] = np.clip(rgb, 0, 255)
         return self
 
     def bevel(self, name, hi=20, lo=24, region=(0, 0, 1, 1)):
