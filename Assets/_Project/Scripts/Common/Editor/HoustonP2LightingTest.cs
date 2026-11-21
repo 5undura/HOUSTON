@@ -32,12 +32,12 @@ public static class HoustonP2LightingTest
     const float LampIntensity = 2.5f, LampRange = 2.2f;
     // 천장 LED 스트립 (형광등 느낌의 차가운 색)
     static readonly Color StripColor = new Color(0.76f, 0.88f, 1f);
-    const float StripIntensity = 0.7f, StripRange = 3.0f, StripSpacing = 1.3f;
+    const float StripIntensity = 1.3f, StripRange = 3.2f, StripSpacing = 1.3f;
     const float StripY = 2.915f, StripInset = 0.6f; // 천장 슬래브 아랫면 2.94 바로 아래, 벽에서 안쪽으로 0.6m
     const string StripMatPath = Dir + "/M_Test_CeilingStrip.mat";
     // 방 중앙 천장등 (벽 5개 이상인 그룹 = 방. 복도는 제외)
-    const float CenterIntensity = 2.2f, CenterRange = 5.5f, CenterPanel = 0.7f;
-    static readonly Color Ambient = new Color(0.03f, 0.03f, 0.038f);
+    const float CenterIntensity = 3.5f, CenterRange = 7f, CenterPanel = 0.7f;
+    static readonly Color Ambient = new Color(0.08f, 0.085f, 0.095f); // 처음값 (0.03, 0.03, 0.038)
 
     [MenuItem("HOUSTON/P2 테스트 씬/PSX·조명 세팅하기 (Test_Jiun)")]
     static void Build()
