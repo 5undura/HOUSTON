@@ -18,10 +18,19 @@ public class P2FirstPersonController : MonoBehaviour
     [Min(0f)] public float mouseSensitivity = 0.12f;
     [Range(0f, 89f)] public float maxLookAngle = 80f;
 
+    [Header("Mouse Look Inertia")]
+    [Tooltip("Seconds for the view to catch up to mouse movement. Lower = snappier.")]
+    [Range(0.01f, 0.20f)] public float lookSmoothTime = 0.07f;
+
     private CharacterController characterController;
     private Vector3 planarVelocity;
     private float verticalVelocity;
     private float cameraPitch;
+    private float targetCameraPitch;
+    private float currentYaw;
+    private float targetYaw;
+    private float pitchSmoothVelocity;
+    private float yawSmoothVelocity;
     private bool isInteracting;
 
     // Status systems (infection, etc.) can alter movement without modifying this script.
@@ -35,6 +44,16 @@ public class P2FirstPersonController : MonoBehaviour
         characterController = GetComponent<CharacterController>();
         if (viewRoot == null)
             Debug.LogError("P2FirstPersonController: Assign ViewRoot in Inspector.", this);
+
+        currentYaw = transform.localEulerAngles.y;
+        targetYaw = currentYaw;
+        if (viewRoot != null)
+        {
+            cameraPitch = Mathf.Clamp(
+                Mathf.DeltaAngle(0f, viewRoot.localEulerAngles.x),
+                -maxLookAngle, maxLookAngle);
+            targetCameraPitch = cameraPitch;
+        }
     }
 
     private void Start()
@@ -53,6 +72,8 @@ public class P2FirstPersonController : MonoBehaviour
         MovePlayer(input);
         if (canMove)
             LookAround();
+        else
+            ResetLookInertia(); // Stop pending rotation while interacting or cursor unlocked.
     }
 
     private Vector2 ReadMovementInput()
@@ -98,11 +119,30 @@ public class P2FirstPersonController : MonoBehaviour
         if (Mouse.current == null || viewRoot == null) return;
         Vector2 delta = Mouse.current.delta.ReadValue();
 
-        transform.Rotate(0f, delta.x * mouseSensitivity, 0f);
-        cameraPitch = Mathf.Clamp(
-            cameraPitch - delta.y * mouseSensitivity,
+        // Mouse input updates the target immediately. The view catches up smoothly.
+        targetYaw += delta.x * mouseSensitivity;
+        targetCameraPitch = Mathf.Clamp(
+            targetCameraPitch - delta.y * mouseSensitivity,
             -maxLookAngle, maxLookAngle);
+
+        currentYaw = Mathf.SmoothDampAngle(
+            currentYaw, targetYaw, ref yawSmoothVelocity,
+            lookSmoothTime, Mathf.Infinity, Time.deltaTime);
+        cameraPitch = Mathf.SmoothDamp(
+            cameraPitch, targetCameraPitch, ref pitchSmoothVelocity,
+            lookSmoothTime, Mathf.Infinity, Time.deltaTime);
+
+        transform.localRotation = Quaternion.Euler(0f, currentYaw, 0f);
         viewRoot.localRotation = Quaternion.Euler(cameraPitch, 0f, 0f);
+    }
+
+    private void ResetLookInertia()
+    {
+        // Prevent a delayed turn after leaving a puzzle UI or unlocking the cursor.
+        targetYaw = currentYaw;
+        targetCameraPitch = cameraPitch;
+        yawSmoothVelocity = 0f;
+        pitchSmoothVelocity = 0f;
     }
 
     private void UpdateCursor()
@@ -126,6 +166,7 @@ public class P2FirstPersonController : MonoBehaviour
     public void SetInteractionMode(bool active)
     {
         isInteracting = active;
+        ResetLookInertia();
         Cursor.lockState = active ? CursorLockMode.None : CursorLockMode.Locked;
         Cursor.visible = active;
     }

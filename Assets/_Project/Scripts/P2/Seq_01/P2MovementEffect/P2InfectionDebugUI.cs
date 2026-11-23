@@ -17,9 +17,9 @@ public class P2InfectionDebugUI : MonoBehaviour
     private void Update()
     {
         if (!enableTestKeys || infection == null || Keyboard.current == null) return;
-        if (Keyboard.current.pageUpKey.wasPressedThisFrame)
+        if (Keyboard.current.upArrowKey.wasPressedThisFrame)
             infection.AddInfection(testStep);
-        if (Keyboard.current.pageDownKey.wasPressedThisFrame)
+        if (Keyboard.current.downArrowKey.wasPressedThisFrame)
             infection.AddInfection(-testStep);
     }
 
@@ -34,6 +34,6 @@ public class P2InfectionDebugUI : MonoBehaviour
         GUI.Box(new Rect(x + 14f, y + 51f, 224f, 13f), "");
         GUI.Box(new Rect(x + 14f, y + 51f, 224f * infection.Normalized, 13f), "");
         if (enableTestKeys)
-            GUI.Label(new Rect(x + 14f, y + 65f, 220f, 18f), "PageUp +10   PageDown -10");
+            GUI.Label(new Rect(x + 14f, y + 65f, 220f, 18f), "Up Arrow +10   Down Arrow -10");
     }
 }
